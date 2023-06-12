@@ -21,7 +21,7 @@ def data_init():
     train_set_x_orig, train_set_y, test_set_x_orig, test_set_y, classes = load_dataset()
     # 查看数据的图片是什么情况
     index = 25
-    # plt.imshow(train_set_x_orig[index])
+    plt.imshow(train_set_x_orig[index])
     # plt.show()
     # 打印训练集的标签
     print("训练集的标签{}".format(train_set_y))

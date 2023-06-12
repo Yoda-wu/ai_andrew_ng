@@ -151,7 +151,7 @@ def test_forward():
     print(np.mean(cache["Z1"]), np.mean(cache["A1"]), np.mean(cache["Z2"]), np.mean(cache["A2"]))
 
 
-def cost_function(A2, Y, paramters):
+def cost_function(A2, Y, parameters):
     """
     交叉熵成本
     input:
@@ -163,8 +163,8 @@ def cost_function(A2, Y, paramters):
 
     """
     m = Y.shape[1]
-    w1 = paramters["w1"]
-    w2 = paramters["w2"]
+    w1 = parameters["w1"]
+    w2 = parameters["w2"]
 
     logprobs = np.multiply(np.log(A2), Y) + np.multiply( (1-Y), np.log(1-A2))
     cost = - np.sum(logprobs) / m
@@ -183,3 +183,130 @@ def test_cost_function():
 
 # 反向传播
 
+def backward(parameters, cache, X, Y):
+    """
+    input:
+        parameters - 神经网络的参数
+        cache - 包含Z1,A1,Z2,A2
+        X - 输入数据
+        Y - 标签
+    output:
+        grads - 梯度向量
+    """
+    m = X.shape[1]
+
+    w1 = parameters["w1"]
+    w2 = parameters["w2"]
+
+    A1 = cache["A1"]
+    A2 = cache["A2"]
+
+    dZ2 = A - Y
+    dW2 = (1 / m ) * np.dot(dZ2, A1.T)
+    db2 = (1 / m) * np.sum(dZ2, axis=1, keepdims=True)
+    dZ1 = np.multiply(np.dot(w2.T, dZ2), 1 - np.power(A1, 2))
+    dW1 = (1 / m) * np.dot(dZ1, X.T)
+    db1 = (1 / m) * np.sum(dZ1, axis=1,keepdims=True)
+    grads = {
+        "dW1" : dW1,
+        "db1" : db1,
+        "dW2" : dW2,
+        "db2" : db2
+        
+    }
+    return grads
+
+def update_prarm(parameters, grads, rate=0.5):
+    """
+    input:
+        - parameters 参数
+        - grads 反向传播梯度
+        - rate 学习率
+    output
+        - parameters 更新之后的参数
+    """
+    w1, w2 = parameters["w1"], parameters["w2"]
+    b1, b2 = parameters["b1"], parameters["b2"]
+
+    dW1, dW2 = grads["dW1"], grads["dW2"]
+    db1, db2 = grads["db1"], grads["db2"]
+
+    w1 = w1 - rate * dW1
+    b1 = b1 - rate * db1
+    w2 = w2 - rate * dW2
+    b2 = b2 - rate * db2
+
+    parameters = {
+        "w1" :w1,
+        "b1" :b1,
+        "w2" :w2,
+        "b2" :b2
+    }
+    return parameters
+
+
+
+def nn_model(X, Y, n_h, iterations, print_cost = False):
+    """
+    input:
+        - X 数据集
+        - Y 标签
+        - n_h 隐藏层节点数
+        - iterations 迭代次数
+        - print_cost 打印成本数值
+    output:
+        - paramters 模型学习参数
+    """
+
+    np.random.seed(3)
+    n_x = layer_sizes(X, Y)[0]
+    n_y = layer_sizes(X, Y)[2]
+
+    parameters = init_param(n_x, n_h, n_y)
+    w1 = parameters["w1"]
+    b1 = parameters["b1"]
+    w2 = parameters["w2"]
+    b2 = parameters["b2"]
+
+    for i in range(iterations):
+        A2, cache = forward(X, parameters)
+        cost = cost_function(A2, Y, parameters)
+        grads = backward(parameters, cache, X, Y)
+        parameters = update_prarm(parameters, grads, rate=0.5)
+
+        if print_cost and i % 1000 == 0:
+            print(f"第{i}次迭代, cost={cost }")
+    return parameters
+
+
+def predict(parameters, X):
+    """
+    input:
+        - paramters 模型学习参数
+        - X 输入数据
+    output:
+        - predictions - 模型预测向量
+    """
+    A2, cache = forward(X, parameters)
+    predictions = np.round(A2)
+    return predictions
+parameters = nn_model(X, Y, n_h = 4, num_iterations=10000, print_cost=True)
+
+#绘制边界
+plot_decision_boundary(lambda x: predict(parameters, x.T), X, Y)
+plt.title("Decision Boundary for hidden layer size " + str(4))
+
+predictions = predict(parameters, X)
+print ('准确率: %d' % float((np.dot(Y, predictions.T) + np.dot(1 - Y, 1 - predictions.T)) / float(Y.size) * 100) + '%')
+
+
+plt.figure(figsize=(16, 32))
+hidden_layer_sizes = [1, 2, 3, 4, 5, 20, 50] #隐藏层数量
+for i, n_h in enumerate(hidden_layer_sizes):
+    plt.subplot(5, 2, i + 1)
+    plt.title('Hidden Layer of size %d' % n_h)
+    parameters = nn_model(X, Y, n_h, num_iterations=5000)
+    plot_decision_boundary(lambda x: predict(parameters, x.T), X, Y)
+    predictions = predict(parameters, X)
+    accuracy = float((np.dot(Y, predictions.T) + np.dot(1 - Y, 1 - predictions.T)) / float(Y.size) * 100)
+    print ("隐藏层的节点数量： {}  ，准确率: {} %".format(n_h, accuracy))

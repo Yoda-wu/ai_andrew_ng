@@ -107,7 +107,7 @@ def init_param(n_x, n_h ,n_y):
 def test_init_param():
     print("=========================测试initialize_parameters=========================")    
     n_x , n_h , n_y = initialize_parameters_test_case()
-    parameters = initialize_parameters(n_x , n_h , n_y)
+    parameters = init_param(n_x , n_h , n_y)
     print("w1 = " + str(parameters["W1"]))
     print("b1 = " + str(parameters["b1"]))
     print("w2 = " + str(parameters["W2"]))
@@ -201,7 +201,7 @@ def backward(parameters, cache, X, Y):
     A1 = cache["A1"]
     A2 = cache["A2"]
 
-    dZ2 = A - Y
+    dZ2 = A2 - Y
     dW2 = (1 / m ) * np.dot(dZ2, A1.T)
     db2 = (1 / m) * np.sum(dZ2, axis=1, keepdims=True)
     dZ1 = np.multiply(np.dot(w2.T, dZ2), 1 - np.power(A1, 2))
@@ -290,14 +290,14 @@ def predict(parameters, X):
     A2, cache = forward(X, parameters)
     predictions = np.round(A2)
     return predictions
-parameters = nn_model(X, Y, n_h = 4, num_iterations=10000, print_cost=True)
+parameters = nn_model(X, Y, n_h = 4, iterations=10000, print_cost=True)
 
 #绘制边界
-plot_decision_boundary(lambda x: predict(parameters, x.T), X, Y)
-plt.title("Decision Boundary for hidden layer size " + str(4))
-
-predictions = predict(parameters, X)
-print ('准确率: %d' % float((np.dot(Y, predictions.T) + np.dot(1 - Y, 1 - predictions.T)) / float(Y.size) * 100) + '%')
+# plot_decision_boundary(lambda x: predict(parameters, x.T), X, Y)
+# plt.title("Decision Boundary for hidden layer size " + str(4))
+# plt.show()
+# predictions = predict(parameters, X)
+# print ('准确率: %d' % float((np.dot(Y, predictions.T) + np.dot(1 - Y, 1 - predictions.T)) / float(Y.size) * 100) + '%')
 
 
 plt.figure(figsize=(16, 32))
@@ -305,8 +305,10 @@ hidden_layer_sizes = [1, 2, 3, 4, 5, 20, 50] #隐藏层数量
 for i, n_h in enumerate(hidden_layer_sizes):
     plt.subplot(5, 2, i + 1)
     plt.title('Hidden Layer of size %d' % n_h)
-    parameters = nn_model(X, Y, n_h, num_iterations=5000)
+    parameters = nn_model(X, Y, n_h, iterations=5000)
     plot_decision_boundary(lambda x: predict(parameters, x.T), X, Y)
     predictions = predict(parameters, X)
     accuracy = float((np.dot(Y, predictions.T) + np.dot(1 - Y, 1 - predictions.T)) / float(Y.size) * 100)
     print ("隐藏层的节点数量： {}  ，准确率: {} %".format(n_h, accuracy))
+
+plt.show()

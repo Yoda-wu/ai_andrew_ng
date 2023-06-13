@@ -106,3 +106,40 @@ def linear_activation_forward(A_prev, W, b, activation):
     cache = (linear_cache, activation_cache)
 
     return A, cache
+
+def L_model_forward(X, parameters):
+    """
+    实现[LINEAR->RELU]*(L-1)->LINEAR->SIGMOID前向传播
+    input:
+        X - 数据
+        parameters - init_param_deep()的输出
+    output:
+        AL - 最后的激活值
+        caches - 包含每一层的cache的列表
+    """
+    caches = []
+    A = X
+    L = len(parameters) // 2 # 网络层数
+    for l in range(1, L):
+        A_prev = A
+        A, cache = linear_activation_forward(A_prev, parameters['w' + str(l)], parameters['b' + str(l)], activation="relu")
+        caches.append(cache)
+
+    AL, cache = linear_activation_forward(A, parameters['w' + str(L)], parameters['b' + str(L)], activation="sigmoid")
+    caches.append(cache)
+
+    return AL, caches
+
+def compute_cost(AL, Y):
+    """
+    计算成本
+    input:
+        AL - 预测值 维度为(1, 实例数量)
+        Y - 标签
+    output:
+        cost - 成本
+    """
+    m = Y.shape[1]
+    cost = -np.sum(np.multiply(np.log(AL), Y) + np.multiply(np.log(1-AL), 1-Y)) / m
+    cost = np.squeeze(cost)
+    return cost

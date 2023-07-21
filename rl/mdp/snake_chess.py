@@ -73,9 +73,40 @@ class Snake_Env(gym.Env):
 
 
 
-def Table_Agent(object):
+class TableAgent(object):
     def __init__(self, env):
         self.s_len = env.observation_space.n
         self.a_len = env.action_space.n
-
- 
+        
+        self.r = [env.reward(s) for s in range(0, self.s_len)]
+        # 确定性策略
+        self.pi = np.zeros(self.s_len, dtype=int)
+        # A x S x S
+        self.p = np.zeros([self.a_len, self.s_len, self.s_len], dtype=float)
+        
+        # 函数参数向量化，参数可以传入列表
+        ladder_move = np.vectorize(lambda x: env.ladders[x] if x in env.ladders else x)
+        
+        # based-model 初始化表格所有位置的概率p[A,S,S]
+        for i, dice in enumerate(env.dices):
+            prob = 1.0 / dice
+            for src in range(1, 100):
+                # 因为arange只给一个数字的时候，是从0开始取到end-1，所以在此处+1
+                step = np.arange(dice) + 1
+                step += src
+                step = np.piecewise(step, [step>100, step<=100], [lambda x: 200-x, lambda x: x])
+                step = ladder_move(step)
+                for dst in step:
+                    # 在当前位置pos=src的情况下，采取i投掷色子的方式，得到最终位置dst
+                    # 概率直接求和的方式是否合理？
+                    self.p[i, src, dst] += prob
+        
+        # 因为src最多到99，所以p[:, 100, 100]是0，此处进行填补
+        self.p[:, 100, 100] = 1
+        self.value_pi = np.zeros((self.s_len))
+        self.value_q = np.zeros((self.s_len, self.a_len))
+        self.gamma = 0.8
+        
+        
+    def play(self, state):
+        return self.pi[state]

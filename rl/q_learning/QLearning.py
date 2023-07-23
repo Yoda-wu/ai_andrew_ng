@@ -16,6 +16,7 @@ class QLearning(object):
         self.epsilon_end  = cfg.epsilon_end     # epsilon-greedy策略中的终止epsilon
         self.epsilon_decay = cfg.epsilon_decay # epsilon衰减率
         self.epsilon = self.epsilon_start # 当前epsilon
+        print(n_actions,n_state)
         self.Q_table = defaultdict(lambda: np.zeros(self.n_actions)) # Q表 嵌套字典存放 状态-> 动作-> 状态-动作值的映射
 
 
@@ -32,6 +33,7 @@ class QLearning(object):
         else:
             # random
             action = np.random.choice(self.n_actions) # 随机选择动作
+        # print(f'action is {action}, n_actions is {self.n_actions}')
         return action
     
     def update(self, state, action, reward, next_state, terminated):

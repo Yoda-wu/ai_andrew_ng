@@ -17,7 +17,7 @@ for i_ep in range(cfg.train_eps): # train_eps: 训练的最大episodes数
     ep_reward = 0  # 记录每个episode的reward
     state = env.reset()  # 重置环境, 重新开一局（即开始新的一个episode）
     while True:
-        action = agent.choose_action(state)  # 根据算法选择一个动作
+        action = agent.samples(state)  # 根据算法选择一个动作
         next_state, reward, done, _ = env.step(action)  # 与环境进行一次动作交互
         agent.update(state, action, reward, next_state, done)  # Q-learning算法更新
         state = next_state  # 存储上一个观察值

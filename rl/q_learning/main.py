@@ -9,6 +9,7 @@ def env_agent_config(cfg,seed=1):
     '''    
     env = gym.make(cfg.env_name,new_step_api=True)  
     env = CliffWalkingWapper.CliffWalkingWapper(env)
+    # env.reset()
     n_states = env.observation_space.n # 状态维度
     n_actions = env.action_space.n # 动作维度
     print(f'状态维度：{n_states}, 动作维度：{n_actions}')

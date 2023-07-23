@@ -2,6 +2,17 @@ import gym
 from gym.core import Env
 import turtle 
 import numpy as np
+import QLearning
+
+def env_agent_config(cfg,seed=1):
+    '''创建环境和智能体
+    '''    
+    env = gym.make(cfg.env_name,new_step_api=True)  
+    env = CliffWalkingWapper(env)
+    n_states = env.observation_space.n # 状态维度
+    n_actions = env.action_space.n # 动作维度
+    agent = QLearning(n_states,n_actions,cfg)
+    return env,agent
 
 class CliffWalkingWapper(gym.Wrapper):
     def __init__(self, env: Env):

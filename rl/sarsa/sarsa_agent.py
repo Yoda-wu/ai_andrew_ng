@@ -23,7 +23,7 @@ class SarsaAgent(object):
         self.sample_count += 1
         # epsilon decay
         self.epsilon = self.epsilon_end + (self.epsilon_start - self.epsilon_end) * np.exp(-self.epsilon_decay * self.sample_count)
-        if np.random().uniform(0, 1) > self.epsilon:
+        if np.random.uniform(0, 1)> self.epsilon:
             action = np.argmax(self.Q_table[str(state)])
         else :
             action = np.random.choice(self.n_actions)

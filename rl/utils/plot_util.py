@@ -22,3 +22,6 @@ def plot_rewards(rewards,title="learning curve"):
     plt.plot(smooth(rewards), label='smoothed')
     plt.legend()
     plt.show()
+
+
+    

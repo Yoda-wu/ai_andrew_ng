@@ -1,8 +1,11 @@
 import gym
 import QLearning
 import CliffWalkingWapper
-import rl.utils.Config as Config
-import rl.utils.plot_util as plot_util
+
+import sys
+sys.path.append("..")
+import utils.Config as Config
+import utils.plot_util as plot_util
 
 def env_agent_config(cfg,seed=1):
     '''创建环境和智能体

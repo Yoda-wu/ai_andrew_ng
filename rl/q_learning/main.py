@@ -1,8 +1,8 @@
 import gym
 import QLearning
 import CliffWalkingWapper
-import Config
-import util
+import rl.utils.Config as Config
+import rl.utils.plot_util as plot_util
 
 def env_agent_config(cfg,seed=1):
     '''创建环境和智能体
@@ -64,7 +64,7 @@ if __name__ == '__main__':
     env, agent = env_agent_config(cfg)
     # 训练
     res_dic = train(cfg,env,agent)
-    util.plot_rewards(res_dic['rewards'], title=f"training curve on {cfg.device} of {cfg.algo_name} for {cfg.env_name}")  
+    plot_util.plot_rewards(res_dic['rewards'], title=f"training curve on {cfg.device} of {cfg.algo_name} for {cfg.env_name}")  
     # 测试
     res_dic = test(cfg,env,agent)
-    util.plot_rewards(res_dic['rewards'], title=f"testing curve on {cfg.device} of {cfg.algo_name} for {cfg.env_name}")
+    plot_util.plot_rewards(res_dic['rewards'], title=f"testing curve on {cfg.device} of {cfg.algo_name} for {cfg.env_name}")

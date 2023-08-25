@@ -43,44 +43,71 @@ class QNet(torch.nn.Module):
         # 隐含层使用relu函数
         x = F.relu(self.fc1(x))
         return self.fc2(x) 
+    
+
+class VANet(torch.nn.Module):
+    def __init__(self,  state_dim, hidden_dim, action_dim) -> None:
+        super(VANet, self).__init__()
+        self.fc1 = torch.nn.Linear(state_dim, hidden_dim)
+        self.fc_A = torch.nn.Linear(hidden_dim, action_dim)
+        self.fc_V = torch.nn.Linear(hidden_dim, 1)
+
+    def forward(self, x):
+        # 隐含层使用relu函数
+        A = self.fc_A(F.relu(self.fc1(x)))
+        V = self.fc_V(F.relu(self.fc1(x)))
+        Q = V + A - A.mean(1).view(-1,1)
+        return Q
 
 # 实现DQN算法
 
-class DQN :
-
-    def __init__(self, 
-                 state_dim, 
-                 hidden_dim, 
-                 action_dim, 
+class DQN:
+    ''' DQN算法,包括Double DQN和Dueling DQN '''
+    def __init__(self,
+                 state_dim,
+                 hidden_dim,
+                 action_dim,
                  learning_rate,
                  gamma,
                  epsilon,
-                 target_update, 
-                 device):
-        
-        self.device =device
+                 target_update,
+                 device,
+                 dqn_type='VanillaDQN'):
         self.action_dim = action_dim
-        # 训练网络
-        self.q_net = QNet(state_dim, hidden_dim, action_dim).to(self.device)
-        self.target_q_net = QNet(state_dim, hidden_dim, action_dim).to(self.device)
-        # Adam优化器
-        self.optimizer = torch.optim.Adam(self.q_net.parameters(), lr =learning_rate)
-
-        self.gamma = gamma # 折现因子
-        self.epsilon = epsilon # e-greedy 
-        self.target_update = target_update # 目标网络更新频率
-        self.count = 0 # 记录更新次数
+        if dqn_type == 'DuelingDQN':  # Dueling DQN采取不一样的网络框架
+            self.q_net = VANet(state_dim, hidden_dim,
+                               self.action_dim).to(device)
+            self.target_q_net = VANet(state_dim, hidden_dim,
+                                      self.action_dim).to(device)
+        else:
+            self.q_net = QNet(state_dim, hidden_dim,
+                              self.action_dim).to(device)
+            self.target_q_net = QNet(state_dim, hidden_dim,
+                                     self.action_dim).to(device)
+        self.optimizer = torch.optim.Adam(self.q_net.parameters(),
+                                          lr=learning_rate)
+        self.gamma = gamma
+        self.epsilon = epsilon
+        self.target_update = target_update
+        self.count = 0
+        self.dqn_type = dqn_type
+        self.device = device
 
     def take_action(self, state):
         if np.random.random() < self.epsilon:
             action = np.random.randint(self.action_dim)
-        else :
+        else:
             state = torch.tensor([state], dtype=torch.float).to(self.device)
             action = self.q_net(state).argmax().item()
         return action
-    
+
+    def max_q_value(self, state):
+        state = torch.tensor([state], dtype=torch.float).to(self.device)
+        return self.q_net(state).max().item()
+
     def update(self, transition_dict):
-        states = torch.tensor(transition_dict["states"],dtype=torch.float).to(self.device)
+        states = torch.tensor(transition_dict['states'],
+                              dtype=torch.float).to(self.device)
         actions = torch.tensor(transition_dict['actions']).view(-1, 1).to(
             self.device)
         rewards = torch.tensor(transition_dict['rewards'],
@@ -89,25 +116,24 @@ class DQN :
                                    dtype=torch.float).to(self.device)
         dones = torch.tensor(transition_dict['dones'],
                              dtype=torch.float).view(-1, 1).to(self.device)
-        dones = torch.tensor(transition_dict['dones'],dtype=torch.float).to(self.device)
 
-        q_values = self.q_net(states).gather(1,actions)
-        print(f" {q_values.shape} {states.shape}     {actions.shape} ")
-        max_next_qvalues = self.target_q_net(next_states).max(1)[0].view(-1,1)
-
-        q_targets = rewards + self.gamma * max_next_qvalues * (1 - dones) # TD误差目标
-
-        dqn_loss = torch.mean(F.mse_loss(q_values, q_targets)) # 均分误差损失函数
-
+        q_values = self.q_net(states).gather(1, actions)
+        if self.dqn_type == 'DoubleDQN':
+            max_action = self.q_net(next_states).max(1)[1].view(-1, 1)
+            max_next_q_values = self.target_q_net(next_states).gather(
+                1, max_action)
+        else:
+            max_next_q_values = self.target_q_net(next_states).max(1)[0].view(
+                -1, 1)
+        q_targets = rewards + self.gamma * max_next_q_values * (1 - dones)
+        dqn_loss = torch.mean(F.mse_loss(q_values, q_targets))
         self.optimizer.zero_grad()
-        dqn_loss.backward()# 反向传播更新
+        dqn_loss.backward()
         self.optimizer.step()
 
         if self.count % self.target_update == 0:
-            self.target_q_net.load_state_dict(
-                self.q_net.state_dict())  # 更新目标网络
+            self.target_q_net.load_state_dict(self.q_net.state_dict())
         self.count += 1
-
 
 
 
